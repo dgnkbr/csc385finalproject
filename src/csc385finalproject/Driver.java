@@ -14,25 +14,34 @@ import dataStructures.*;
 
 public class Driver {
 	
+	/*	TODO
+	 * 		BUG:in some users, the top 5 includes movies with 'NaN' as a rating. related to BMH and comparables?
+	 * 		needs commenting
+	 * 		possibly change ArrayLists to another data structure
+	 * 		optimizing!
+	 */
+	
 	public static BinaryMaxHeap<MovieRatingPair> userPredictedRatings;
 	public static ArrayList<String> moviesdat=new ArrayList<String>();
 	public static ArrayList<String> ratingsdat=new ArrayList<String>();
 	public static ArrayList<String> similarityTableRaw=new ArrayList<String>();
-	private static String[][] movies;										//2d array to store movies and their id
-	private static int[][] ratings;											//2d array to store users and their ratings
-	private static int[][] uservmovies;										//2d array with users(row) movies(col) and the rating for the movie
-	private static double[][] similarityTable;								//table to hold similarity values
+	public static String[][] movies;										//2d array to store movies and their id
+	public static int[][] ratings;											//2d array to store users and their ratings
+	public static int[][] uservmovies;										//2d array with users(row) movies(col) and the rating for the movie
+	public static double[][] similarityTable;								//table to hold similarity values
 	public static int numUsers;
 	public static int numMovies;
 	
-	public static void main(String[] args) throws IOException,FileNotFoundException{
-		long d1,d2;
+	public static void main(String[] args) throws IOException,FileNotFoundException,Exception{
+		long d1,d2,d3,d4;
+		
+		d3=System.currentTimeMillis();
 		
 		d1=System.currentTimeMillis();
 		Tools.init();		
 		d2=System.currentTimeMillis();
 		System.out.println("INIT: ("+(d2-d1)+"ms)");
-		
+
 		d1=System.currentTimeMillis();
 		System.out.println(Tools.writeSimilarityTable());	
 		d2=System.currentTimeMillis();
@@ -49,7 +58,7 @@ public class Driver {
 		System.out.println("READ_SIM_TABLE: ("+(d2-d1)+"ms)");
 
 		d1=System.currentTimeMillis();
-		Tools.predictRating(1,1156);
+		Tools.predictRating(5,1235);
 		d2=System.currentTimeMillis();
 		System.out.println("PREDICT_SINGLE_RATING: ("+(d2-d1)+"ms)");
 		
@@ -58,9 +67,10 @@ public class Driver {
 		d1=System.currentTimeMillis();
 		for(int x=1;x<numUsers+1;x++){
 			for(int y=1;y<numMovies+1;y++){
-				userPredictedRatings.add(new MovieRatingPair(movies[y-1][1],Tools.predictRating(x,y)));
+				if(uservmovies[x-1][y-1]==0)
+					userPredictedRatings.add(new MovieRatingPair(movies[y-1][1],Tools.predictRating(x,y)));
 			}
-			System.out.print("user ID: "+x+" top 5 reccomendations: ");
+			System.out.print("user ID: "+x+" top 5 recomendations: ");
 			for(int z=0;z<5;z++){
 				System.out.print(userPredictedRatings.get().getMovie()+"::"+userPredictedRatings.get().getRating()+" | ");
 				userPredictedRatings.remove();
@@ -69,9 +79,10 @@ public class Driver {
 			userPredictedRatings.clear();
 		}
 		d2=System.currentTimeMillis();
-		System.out.println("PREDICT_ALL_RATINGS: ("+(d2-d1)+"ms)");
+		System.out.println("PREDICT_AND_PRINT_ALL_RATINGS: ("+(d2-d1)+"ms)");
 		
-		System.out.println(Tools.predictRating(943,1429));
+		d4=System.currentTimeMillis();
+		System.out.println("TOTAL_RUNTIME: ("+(d4-d3)+"ms)");
 	}
 
 	public static class Tools {
@@ -119,12 +130,11 @@ public class Driver {
 		
 		public static double similarity(int item1, int item2){
 			double sumOfItem1vsItem2=0,sumOfSquaresItem1=0,sumOfSquaresItem2=0,ret;
-			for(int x=0;x<numUsers;x++)
+			for(int x=0;x<numUsers;x++){
 				sumOfItem1vsItem2+=uservmovies[x][item1-1]*uservmovies[x][item2-1];
-			for(int x=0;x<numUsers;x++)
 				sumOfSquaresItem1+=Math.pow(uservmovies[x][item1-1],2);
-			for(int x=0;x<numUsers;x++)
 				sumOfSquaresItem2+=Math.pow(uservmovies[x][item2-1],2);
+			}
 			if((Math.sqrt(sumOfSquaresItem1)*Math.sqrt(sumOfSquaresItem2))==0)
 				return 0;
 			ret=sumOfItem1vsItem2/
@@ -133,15 +143,17 @@ public class Driver {
 			return ret;
 		}
 		
-		public static double predictRating(int user, int item){
+		public static double predictRating(int user, int item) throws Exception{
 			double sum=0,count=0,sim=0;
 			for(int x=0;x<numMovies;x++){
-				if(uservmovies[user-1][x]!=0){ //
+				if(uservmovies[user-1][x]!=0){
 					sim=similarityTable[x][item-1];
 					sum+=sim*uservmovies[user-1][x];
 					count+=sim;
 				}
 			}
+//			if(!((sum/count)>0) && !((sum/count)<5))
+//				throw new Exception();
 			return sum/count;
 		}
 		
@@ -199,8 +211,8 @@ public class Driver {
 		}
 	}
 	public static class MovieRatingPair implements Comparable<MovieRatingPair>{
-		private String movie;
-		private double rating;
+		public String movie;
+		public double rating;
 		MovieRatingPair(String movie,double rating){
 			this.movie=movie;
 			this.rating=rating;
