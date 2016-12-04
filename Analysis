@@ -1,0 +1,30 @@
+I used ArrayLists in order to store the raw information from the ratings.dat and movies.dat, along with 2d-Arrays for storing the actual
+movies, ratings, and uservmovies(rating from user on movie). I felt as though this was adequate for the task at hand, and generating
+the similarity table only takes ~15 seconds, with the full runtime lasting around 20 seconds. This is reduced largely if you read the
+similarity table from similarityTable.dat, created by writeSimilarityTable(). The disadvantage of this is the large upfront cost: it 
+can take nearly 50 seconds, or nearly 4 times as long to generate and write the similarity table to the disk. BUT, the upside is after
+the file is created, reading from it takes under ~3 seconds, leading to total runtime being a speedy ~5 seconds.
+
+The algorithm I used to compute the top5 ratings for each user was very simple. It is of  O(u(m+logn)), where u is the number of 
+users, m is the number of movies, and n is the size of the BinaryMaxHeap. I use a BinaryMaxHeap and add all predicted ratings to it.
+I then loop through 5 times, printing the root and the removing it to get the next largest in the heap. After looping 5 times, the
+heap is cleared and the outer loop continues to the next user.
+
+Big Oh
+	Init: O(5n)
+		Loops through ratings.dat and stores to ratings, along with movies.dat and movies and creates 'uservmovies'. All of big oh
+		n
+		
+	Write/Read Sim table: O(2n^2)
+		--------Or--------
+	Create Sim table: O(nlogn)
+		Reading/Writing is a much larger bigoh because I loop from x to movies and y to movies, instead of x to movies and y to x. This
+			makes writing to file easier, but a much larger computation. Improvements could be made, but this isn't the main part of the
+			assignment, so I put it off since after it's generated it works so well anyway!
+		-----
+		Creating the sim table is much simpler because I only need to generate half of the table, greatly reducing the ammount of
+			calculations needed
+	
+	Main algorithm: O(n(n+logn))
+		The meat of the program has a large-ish big oh due to a outer loop with two inner loops inside. One of the inner loops
+			loops through only 5 times, but the BinaryMaxHeap has to reheap each time I call remove.
